@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="moments_view">
+
+        <attr name="type" format="enum">
+            <enum name="IMAGE" value="1" />
+            <enum name="VIDEO" value="2" />
+        </attr>
+        <attr name="duration" format="integer"/>
+        
+    </declare-styleable>
+</resources>
