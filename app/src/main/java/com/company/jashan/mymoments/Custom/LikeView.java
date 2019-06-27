@@ -1,11 +1,16 @@
 package com.company.jashan.mymoments.Custom;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.company.jashan.mymoments.R;
+import com.facebook.keyframes.KeyframesDirectionallyScalingDrawable;
 import com.facebook.keyframes.KeyframesDrawable;
 import com.facebook.keyframes.KeyframesDrawableBuilder;
 import com.facebook.keyframes.deserializers.KFImageDeserializer;
@@ -15,11 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-public class LikeView extends LinearLayout {
+import static android.widget.LinearLayout.HORIZONTAL;
+
+public class LikeView extends FrameLayout {
 
 
-    ArrayList<KeyframesDrawable> drawableList =
-            new ArrayList<KeyframesDrawable>() ;
+    ArrayList<KeyframesDrawable> drawableList = new ArrayList<>();
 
     public LikeView(Context context) {
         super(context);
@@ -37,24 +43,48 @@ public class LikeView extends LinearLayout {
     }
 
     private void init() {
-        setOrientation(HORIZONTAL);
-        setBackgroundColor(getResources().getColor(android.R.color.white));
-        LayoutParams params =
-                new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 400);
-        LayoutParams imageParams = new LayoutParams(120, 120);
-        params.setMargins(10, 10, 10, 10);
-
+        LayoutParams params = new LayoutParams(400, 400);
         setLayoutParams(params);
 
+        LinearLayout parentLayout = new LinearLayout(getContext());
+        parentLayout.setOrientation(HORIZONTAL);
+        parentLayout.setPadding(0, 20, 0, 20);
+
+//        Drawable circularDrawable =
+//                getResources().getDrawable(R.drawable.circular_edit_text);
+//
+//        ImageView bg = new ImageView(getContext());
+//        LayoutParams bgParams = new LayoutParams(160 * 5, 440);
+//        bg.setLayoutParams(bgParams);
+//        bg.setBackground(circularDrawable);
+
+
+        LayoutParams parentParams =
+                new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(200, 200);
+//        imageParams.setMargins(0, 10, 0, 10);
+
+        parentLayout.setLayoutParams(parentParams);
+
         for (int x = 0; x < 5; x++) {
-            ImageView view = new ImageView(getContext());
+            final ImageView view = new ImageView(getContext());
+            view.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    view.setScaleX(1f);
+                    view.setScaleY(1f);
+                }
+            });
+            view.setScaleX(0.5f);
+            view.setScaleY(0.5f);
             view.setLayoutParams(imageParams);
             if (inflateImages(view) != null) {
                 drawableList.add(inflateImages(view));
-
             }
-            addView(view);
+            parentLayout.addView(view);
         }
+        addView(parentLayout);
     }
 
     private KeyframesDrawable inflateImages(ImageView view) {
