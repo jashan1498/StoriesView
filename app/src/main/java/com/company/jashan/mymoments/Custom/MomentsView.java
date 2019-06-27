@@ -1,6 +1,7 @@
 package com.company.jashan.mymoments.Custom;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -15,7 +16,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
+import android.view.animation.TranslateAnimation;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -42,7 +43,10 @@ public class MomentsView extends FrameLayout {
     EditText replyEditText;
     LinearLayout replyLayout;
     MomentsViewGestureListener gestureListener;
-    View replyView;
+    KeyboardHeightProvider keyboardHeightProvider;
+    View replyEditView;
+    int keyboardHeight = 0;
+    InputMethodManager imm;
 
     public MomentsView(Context context) {
         super(context);
@@ -58,7 +62,8 @@ public class MomentsView extends FrameLayout {
         init(attrs);
     }
 
-    public MomentsView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public MomentsView(Context context, AttributeSet attrs, int defStyleAttr,
+            int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(attrs);
     }
@@ -69,9 +74,13 @@ public class MomentsView extends FrameLayout {
     }
 
     private void init(AttributeSet attrs) {
-        TypedArray array = getResources().obtainAttributes(attrs, R.styleable.moments_view);
+        TypedArray array = getResources().obtainAttributes(attrs,
+                R.styleable.moments_view);
         gestureListener = new MomentsViewGestureListener(onProgressListener);
         currentIndex = 0;
+        keyboardHeightProvider =
+                new KeyboardHeightProvider((Activity) getContext());
+        imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         setViews();
         array.recycle();
     }
@@ -84,29 +93,32 @@ public class MomentsView extends FrameLayout {
 
         parentLayout = new LinearLayout(getContext());
         parentLayout.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
+        parentLayout.setBackgroundColor(getContext().getResources().getColor(android.R.color.black));
         videoView = new VideoView(getContext());
         bgImageView = new ImageView(getContext());
 
         //////////////////////// bottom view /////////////////////////////
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        FrameLayout.LayoutParams replyLayoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        FrameLayout.LayoutParams replyLayoutParams =
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         replyLayout = new LinearLayout(getContext());
-        ImageView replay_bg = new ImageView(getContext());
+        ImageView arrowUpImage = new ImageView(getContext());
 
-        replay_bg.setBackgroundResource(R.drawable.arrow_up);
+        arrowUpImage.setBackgroundResource(R.drawable.arrow_up);
 
-        replay_bg.setLayoutParams(params);
+        arrowUpImage.setLayoutParams(params);
         replyLayoutParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         replyLayout.setLayoutParams(replyLayoutParams);
 
-        replyView = LayoutInflater.from(getContext()).inflate(R.layout.reply_layout, this, false);
+        replyEditView =
+                LayoutInflater.from(getContext()).inflate(R.layout.reply_layout, this, false);
 
         replyLayout.setOrientation(LinearLayout.VERTICAL);
-        replyLayout.addView(replay_bg);
-        replyLayout.addView(replyView);
-        replyEditText = replyView.findViewById(R.id.edit_text);
+        replyLayout.addView(arrowUpImage);
+        replyLayout.addView(replyEditView);
+        replyEditText = replyEditView.findViewById(R.id.edit_text);
 
         replyLayout.setOnClickListener(new OnClickListener() {
             @Override
@@ -115,8 +127,10 @@ public class MomentsView extends FrameLayout {
             }
         });
         /////////////////////////////////////////////////////////////
-        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        LinearLayout.LayoutParams imageParams =
+                new LinearLayout.LayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         imageParams.weight = 1;
+        imageParams.gravity = Gravity.CENTER;
 
         videoView.setLayoutParams(imageParams);
         bgImageView.setLayoutParams(imageParams);
@@ -126,6 +140,8 @@ public class MomentsView extends FrameLayout {
         parentLayout.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+//                if (imm.isActive()) imm.toggleSoftInput(InputMethodManager
+// .HIDE_NOT_ALWAYS, 0);
                 return gestureDetector.onTouchEvent(event);
             }
         });
@@ -139,15 +155,50 @@ public class MomentsView extends FrameLayout {
     }
 
     private void ShowReplyView() {
+        keyboardHeightProvider.setKeyboardHeightObserver(new KeyboardHeightObserver() {
+            @Override
+            public void onKeyboardHeightChanged(int height, int orientation) {
+                keyboardHeight = height;
 
-        replyView.setVisibility(VISIBLE);
+                if (height > 150) {
+                    showReplyEditView(height);
+                } else {
+                    hideReplyEditView();
+                }
+            }
+        });
+
         if (replyEditText.requestFocus()) {
-            InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+            keyboardHeightProvider.start();
         }
-        final Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.edit_text_visibility);
-        replyLayout.setAnimation(animation);
-        animation.start();
+
+    }
+
+    private void hideReplyEditView() {
+        TranslateAnimation translateAnimation =
+                new TranslateAnimation(Animation.ABSOLUTE, 0,
+                        Animation.ABSOLUTE, 0, Animation.ABSOLUTE, 0,
+                        Animation.ABSOLUTE, 0);
+        translateAnimation.setDuration(500);
+        replyLayout.setAnimation(translateAnimation);
+        replyEditView.setVisibility(GONE);
+
+        translateAnimation.setFillAfter(true);
+        translateAnimation.start();
+    }
+
+    private void showReplyEditView(int height) {
+        TranslateAnimation translateAnimation =
+                new TranslateAnimation(Animation.ABSOLUTE, 0,
+                        Animation.ABSOLUTE, 0, Animation.ABSOLUTE, 0,
+                        Animation.ABSOLUTE, -height - 100);
+        translateAnimation.setDuration(400);
+        replyLayout.setAnimation(translateAnimation);
+        translateAnimation.setFillAfter(true);
+
+        replyEditView.setVisibility(VISIBLE);
+        translateAnimation.start();
 
     }
 
@@ -174,8 +225,10 @@ public class MomentsView extends FrameLayout {
             final Content content = contentList.get(currentIndex);
             if (content instanceof ImageContent) {
                 showImageView();
-                Bitmap bitmap = ((ImageContent) contentList.get(currentIndex)).getContent();
-                bgImageView.setBackground(new BitmapDrawable(getResources(), bitmap));
+                Bitmap bitmap =
+                        ((ImageContent) contentList.get(currentIndex)).getContent();
+                bgImageView.setBackground(new BitmapDrawable(getResources(),
+                        bitmap));
                 startContentAnimation(content);
                 content.getProgressView().setProgressListener(new ProgressView.ProgressListener() {
                     @Override
@@ -188,7 +241,8 @@ public class MomentsView extends FrameLayout {
                     }
                 });
             } else if (content instanceof VideoContent) {
-                Uri uri = ((VideoContent) contentList.get(currentIndex)).getUri();
+                Uri uri =
+                        ((VideoContent) contentList.get(currentIndex)).getUri();
                 showVideoView();
                 videoView.setVideoURI(uri);
                 videoView.start();
@@ -252,9 +306,11 @@ public class MomentsView extends FrameLayout {
 
     private ProgressView createProgressView(int duration) {
         ProgressView progressView = new ProgressView(getContext(), duration);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.weight = 1;
-        params.topMargin = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, 15, getContext().getResources().getDisplayMetrics()));
+        params.topMargin =
+                Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, 15, getContext().getResources().getDisplayMetrics()));
         progressView.setLayoutParams(params);
         if (contentList.size() >= 1) {
             addSpace();
@@ -267,7 +323,8 @@ public class MomentsView extends FrameLayout {
 
     public void addVideo(int res, int duration) {
         VideoContent content = new VideoContent();
-        Uri uri = Uri.parse("android.resource://" + getContext().getPackageName() + "/" + res);
+        Uri uri =
+                Uri.parse("android.resource://" + getContext().getPackageName() + "/" + res);
         content.setUri(uri);
         content.setDuration(duration);
         content.setProgressView(createProgressView(duration));
@@ -276,8 +333,10 @@ public class MomentsView extends FrameLayout {
 
     private void addSpace() {
         View emptyView = new View(getContext());
-        LayoutParams params = new LayoutParams(10, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.topMargin = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, 15, getContext().getResources().getDisplayMetrics()));
+        LayoutParams params = new LayoutParams(10,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.topMargin =
+                Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, 15, getContext().getResources().getDisplayMetrics()));
         emptyView.setLayoutParams(params);
 
         childLayout.addView(emptyView);

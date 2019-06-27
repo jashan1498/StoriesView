@@ -12,18 +12,19 @@ import java.util.ArrayList;
 
 public class MomentsViewGestureListener implements GestureDetector.OnGestureListener {
 
+    public boolean isPaused = false;
     private MomentsView.OnProgressListener onProgressListener;
     private ProgressView progressView;
     private ArrayList<Content> contentList;
     private LinearLayout parentLayout;
     private MomentsView view;
-    public boolean isPaused = false;
 
     MomentsViewGestureListener(MomentsView.OnProgressListener onProgressListener) {
         this.onProgressListener = onProgressListener;
     }
 
-    void setData(ArrayList<Content> contentList, LinearLayout parentLayout, MomentsView view) {
+    void setData(ArrayList<Content> contentList, LinearLayout parentLayout,
+            MomentsView view) {
         this.contentList = contentList;
         this.parentLayout = parentLayout;
         this.view = view;
@@ -69,7 +70,8 @@ public class MomentsViewGestureListener implements GestureDetector.OnGestureList
     }
 
     @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
+            float distanceY) {
 
         return true;
     }
@@ -82,7 +84,8 @@ public class MomentsViewGestureListener implements GestureDetector.OnGestureList
     }
 
     @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
+            float velocityY) {
 
         if (e2.getY() - e1.getY() > 20) {
             onProgressListener.onProgressFinished();

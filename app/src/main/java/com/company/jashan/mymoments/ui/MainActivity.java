@@ -5,15 +5,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.TextView;
 
 import com.company.jashan.mymoments.Adapter.StatusViewAdapter;
 import com.company.jashan.mymoments.Custom.SlowLinearScrollLayout;
@@ -21,20 +14,28 @@ import com.company.jashan.mymoments.Custom.SlowSnapHelper;
 import com.company.jashan.mymoments.R;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     ArrayList<String> dummyList = new ArrayList<String>();
     StatusViewAdapter statusViewAdapter;
     boolean run;
-    RecyclerView statusView;
+    Button button;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         RecyclerView statusView = findViewById(R.id.status_list_view);
+        button = findViewById(R.id.button);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, Reaction_activity.class));
+            }
+        });
         makeDummyList();
 
         statusView.setLayoutManager(new SlowLinearScrollLayout(this, SlowLinearScrollLayout.HORIZONTAL, false));
@@ -72,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         slowSnapHelper.attachToRecyclerView(statusView);
         statusView.setAdapter(statusViewAdapter);
     }
+
 
     private void makeDummyList() {
         for (int x = 0; x < 3; x++) {

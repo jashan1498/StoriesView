@@ -9,13 +9,16 @@ public class SlowLinearScrollLayout extends LinearLayoutManager {
         super(context);
     }
 
-    public SlowLinearScrollLayout(Context context, int orientation, boolean reverseLayout) {
+    public SlowLinearScrollLayout(Context context, int orientation,
+            boolean reverseLayout) {
         super(context, orientation, reverseLayout);
     }
 
     @Override
-    public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        return super.scrollHorizontallyBy((int) Math.round(dx / 1), recycler, state);
+    public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler,
+            RecyclerView.State state) {
+        return super.scrollHorizontallyBy((int) Math.round(dx / 1), recycler,
+                state);
     }
 
 
